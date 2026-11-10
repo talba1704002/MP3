@@ -7,19 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Unzip project
-        run: unzip -q PartySync.zip
+        run: |
+          unzip -q PartySync-All.zip -d src_unzipped
+          # find the folder that holds settings.gradle.kts (works for flat or nested zips)
+          DIR=$(dirname "$(find src_unzipped -name settings.gradle.kts | head -n 1)")
+          echo "PROJECT_DIR=$DIR" >> $GITHUB_ENV
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
+
       - name: Build debug APK
-        working-directory: PartySync
+        working-directory: ${{ env.PROJECT_DIR }}
         run: gradle assembleDebug --no-daemon
+
       - uses: actions/upload-artifact@v4
         with:
           name: PartySync-debug-apk
-          path: PartySync/app/build/outputs/apk/debug/*.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
